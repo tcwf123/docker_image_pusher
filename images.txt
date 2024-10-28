@@ -15,3 +15,4 @@ ghcr.io/imagegenius/immich:latest
 lscr.io/linuxserver/plex:latest
 lscr.io/linuxserver/qbittorrent:latest
 apachewebdav/apachewebdav:latest
+ghcr.io/gethomepage/homepage:latest
