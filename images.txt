@@ -5,3 +5,14 @@ xhofe/alist:latest
 #支持指定架构
 --platform=linux/arm64 xiaoyaliu/alist
 nyanmisaka/jellyfin:latest
+dezhao/lanraragi_cn:latest
+jellyfin/jellyfin:latest
+library/redis:latest
+deasmi/unraid-tailscale:latest
+vaultwarden/server:latest
+tensorchord/pgvecto-rs:latest
+lscr.io/linuxserver/calibre:latest
+ghcr.io/imagegenius/immich:latest
+lscr.io/linuxserver/plex:latest
+lscr.io/linuxserver/qbittorrent:latest
+apachewebdav/apachewebdav:latest
