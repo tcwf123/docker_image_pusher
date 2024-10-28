@@ -10,7 +10,6 @@ jellyfin/jellyfin:latest
 library/redis:latest
 deasmi/unraid-tailscale:latest
 vaultwarden/server:latest
-tensorchord/pgvecto-rs:latest
 lscr.io/linuxserver/calibre:latest
 ghcr.io/imagegenius/immich:latest
 lscr.io/linuxserver/plex:latest
