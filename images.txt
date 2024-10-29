@@ -12,3 +12,6 @@ apachewebdav/apachewebdav:latest
 ghcr.io/gethomepage/homepage:latest
 gdy666/lucky:latest
 tensorchord/pgvecto-rs:pg16-v0.2.0
+hslr/sun-panel:latest
+linuxserver/jackett:latest
+xhofe/alist:latest
