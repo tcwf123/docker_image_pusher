@@ -19,4 +19,4 @@ talebook/talebook:latest
 mzz2017/v2raya
 deluan/navidrome
 difegue/lanraragi
-stirlingtools/stirling-pdf
+stirlingtools/stirling-pdf:latest-fat
