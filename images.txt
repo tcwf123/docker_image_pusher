@@ -18,3 +18,4 @@ xhofe/alist:latest
 talebook/talebook:latest
 mzz2017/v2raya
 deluan/navidrome
+difegue/lanraragi
