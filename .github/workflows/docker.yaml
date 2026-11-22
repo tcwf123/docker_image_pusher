@@ -19,10 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install skopeo
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y skopeo
           skopeo --version
@@ -32,7 +33,6 @@ jobs:
           set -euo pipefail
           skopeo login -u "$ALIYUN_REGISTRY_USER" -p "$ALIYUN_REGISTRY_PASSWORD" "$ALIYUN_REGISTRY"
 
-          # 数据预处理：判断镜像名在不同命名空间下是否重名
           declare -A duplicate_images
           declare -A temp_map
           while IFS= read -r line || [ -n "$line" ]; do
@@ -43,9 +43,9 @@ jobs:
             fi
 
             image=$(echo "$line" | awk '{print $NF}')
-            image="${image%%@*}"
-            image_name_tag=$(echo "$image" | awk -F'/' '{print $NF}')
-            name_space=$(echo "$image" | awk -F'/' '{if (NF==3) print $2; else if (NF==2) print $1; else print ""}')
+            image_clean="${image%%@*}"
+            image_name_tag=$(echo "$image_clean" | awk -F'/' '{print $NF}')
+            name_space=$(echo "$image_clean" | awk -F'/' '{if (NF==3) print $2; else if (NF==2) print $1; else print ""}')
             name_space_key="${name_space}_"
             image_name=$(echo "$image_name_tag" | awk -F':' '{print $1}')
 
@@ -59,7 +59,8 @@ jobs:
             fi
           done < images.txt
 
-          # 逐行使用 skopeo copy 转存
+          failed_images=()
+
           while IFS= read -r line || [ -n "$line" ]; do
             line="${line%$'\r'}"
             [[ -z "${line// }" ]] && continue
@@ -76,6 +77,22 @@ jobs:
 
             image=$(echo "$line" | awk '{print $NF}')
             image_clean="${image%%@*}"
+
+            # 如果包含 @sha256:，去掉 tag 只保留 "仓库路径/镜像名@sha256:摘要"
+            if [[ "$image" == *@* ]]; then
+              digest_part="${image#*@}"
+              last_segment="${image_clean##*/}"
+              prefix_path="${image_clean%/*}"
+              repo_only="${last_segment%%:*}"
+              if [[ "$prefix_path" == "$image_clean" ]]; then
+                src_image="${repo_only}@${digest_part}"
+              else
+                src_image="${prefix_path}/${repo_only}@${digest_part}"
+              fi
+            else
+              src_image="$image_clean"
+            fi
+
             image_name_tag=$(echo "$image_clean" | awk -F'/' '{print $NF}')
             name_space=$(echo "$image_clean" | awk -F'/' '{if (NF==3) print $2; else if (NF==2) print $1; else print ""}')
             image_name=$(echo "$image_name_tag" | awk -F':' '{print $1}')
@@ -96,10 +113,24 @@ jobs:
               extra_args+=(--override-os "$os_part" --override-arch "$arch_part")
             fi
 
-            echo "skopeo copy docker://$image -> docker://$new_image"
-            skopeo copy \
+            echo "=========================================="
+            echo "Copying: docker://$src_image -> docker://$new_image"
+            if skopeo copy \
+              --retry-times 3 \
               "${extra_args[@]}" \
               --dest-creds "$ALIYUN_REGISTRY_USER:$ALIYUN_REGISTRY_PASSWORD" \
-              "docker://$image" \
-              "docker://$new_image"
+              "docker://$src_image" \
+              "docker://$new_image"; then
+              echo "SUCCESS: $new_image"
+            else
+              echo "FAILED: $line"
+              failed_images+=("$line")
+            fi
           done < images.txt
+
+          if [ "${#failed_images[@]}" -gt 0 ]; then
+            echo "=========================================="
+            echo "以下镜像转存失败："
+            printf ' - %s\n' "${failed_images[@]}"
+            exit 1
+          fi
